@@ -44,6 +44,18 @@ pub fn volk_32fc_x2_multiply_32fc(
     )
 }
 
+// Multiply two vectors in place.
+pub fn volk_32fc_x2_multiply_32fc_inplace(out: &mut [Complex<f32>], in0: &[Complex<f32>]) {
+    assert_eq!(out.len(), in0.len());
+    let func = unsafe { raw::volk_32fc_x2_multiply_32fc.unwrap() };
+    func(
+        out.as_mut_ptr(),
+        in0.as_ptr(),
+        out.as_ptr(),
+        in0.len() as libc::c_uint,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -7,7 +7,7 @@ mod raw {
     unsafe extern "C" {
         pub(crate) static mut volk_32f_sqrt_32f:
             Option<extern "C" fn(out: *mut c_float, inp: *const c_float, len: c_uint)>;
-        pub(crate) static mut volk_32fc_x2_multiply_32fc_u: Option<
+        pub(crate) static mut volk_32fc_x2_multiply_32fc: Option<
             extern "C" fn(
                 out: *mut Complex<f32>,
                 in0: *const Complex<f32>,
@@ -35,7 +35,7 @@ pub fn volk_32fc_x2_multiply_32fc(
 ) {
     assert_eq!(in0.len(), in1.len());
     assert_eq!(out.len(), in0.len());
-    let func = unsafe { raw::volk_32fc_x2_multiply_32fc_u.unwrap() };
+    let func = unsafe { raw::volk_32fc_x2_multiply_32fc.unwrap() };
     func(
         out.as_mut_ptr(),
         in0.as_ptr(),

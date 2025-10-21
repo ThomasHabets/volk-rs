@@ -1,6 +1,6 @@
 [package]
 name = "volk"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 license = "MIT"
 authors = ["Thomas Habets <thomas@habets.se>"]
@@ -9,6 +9,7 @@ description = "Rust bindings for volk"
 
 [dependencies]
 libc = "0.2"
+num-complex = "0.4.6"
 
 [build-dependencies]
 pkg-config = "0.3"

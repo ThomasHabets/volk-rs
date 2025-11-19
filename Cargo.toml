@@ -2,7 +2,7 @@
 name = "volk"
 version = "0.1.5"
 edition = "2024"
-license = "LGPL"
+license = "LGPL-3.0-only"
 authors = ["Thomas Habets <thomas@habets.se>"]
 repository = "https://github.com/ThomasHabets/volk-rs"
 description = "Rust bindings for volk"

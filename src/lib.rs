@@ -27,15 +27,21 @@ pub(crate) mod ffi {
 // TODO: also add a try version.
 macro_rules! make_funcs {
     (
+        $(#[$meta:meta])*
         fn $name:ident($( $arg:ident : $ty:ty ),* $(,)?) $(-> $ret:ty)? $block:block
         checks $checks:block
 
 ) => {
         paste! {
+            $(#[$meta])*
+            #[inline]
             pub fn $name($( $arg : $ty ),*) $(-> $ret)? {
                 $checks;
                 $block
             }
+            $(#[$meta])*
+            #[doc = concat!("\n\nThis unsafe version does no bounds checks.")]
+            #[inline]
             pub unsafe fn [<$name  _unchecked>]($( $arg : $ty ),*) $(-> $ret)? {
                 $block
             }
@@ -44,6 +50,7 @@ macro_rules! make_funcs {
 }
 
 make_funcs! {
+    /// Take square root of a vector of floats.
     fn volk_32f_sqrt_32f(out: &mut [f32], inp: &[f32]) {
         unsafe { ffi::volk_32f_sqrt_32f(out.as_mut_ptr(), inp.as_ptr(), inp.len() as libc::c_uint) }
     }
@@ -53,7 +60,7 @@ make_funcs! {
 }
 
 make_funcs! {
-    // Multiply two vectors.
+    /// Multiply two complex vectors.
     fn volk_32fc_x2_multiply_32fc(
         out: &mut [Complex<f32>],
         in0: &[Complex<f32>],
@@ -74,7 +81,7 @@ make_funcs! {
 }
 
 make_funcs! {
-    // Multiply two vectors in place.
+    /// Multiply two complex vectors in place.
     fn volk_32fc_x2_multiply_32fc_inplace(out: &mut [Complex<f32>], in0: &[Complex<f32>]) {
         let func = unsafe { ffi::volk_32fc_x2_multiply_32fc };
         func(

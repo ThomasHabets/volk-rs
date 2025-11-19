@@ -1,8 +1,8 @@
 [package]
 name = "volk"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
-license = "MIT"
+license = "LGPL"
 authors = ["Thomas Habets <thomas@habets.se>"]
 repository = "https://github.com/ThomasHabets/volk-rs"
 description = "Rust bindings for volk"

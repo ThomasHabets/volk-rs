@@ -1,59 +1,92 @@
 use num_complex::Complex;
+use paste::paste;
 
-mod raw {
+pub(crate) mod ffi {
     use super::Complex;
     use libc::{c_float, c_uint};
+
     #[link(name = "volk")]
     unsafe extern "C" {
-        pub(crate) static mut volk_32f_sqrt_32f:
-            Option<extern "C" fn(out: *mut c_float, inp: *const c_float, len: c_uint)>;
-        pub(crate) static mut volk_32fc_x2_multiply_32fc: Option<
-            extern "C" fn(
-                out: *mut Complex<f32>,
-                in0: *const Complex<f32>,
-                in1: *const Complex<f32>,
-                len: c_uint,
-            ),
-        >;
+        /// Take square root of 32bit floats.
+        pub static mut volk_32f_sqrt_32f:
+            extern "C" fn(out: *mut c_float, inp: *const c_float, len: c_uint);
+
+        /// Multiply two vectors of complex numbers, pairwise.
+        pub static mut volk_32fc_x2_multiply_32fc: extern "C" fn(
+            out: *mut Complex<f32>,
+            in0: *const Complex<f32>,
+            in1: *const Complex<f32>,
+            len: c_uint,
+        );
         // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
         // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
         // fn volk_free(ptr: *mut core::ffi::c_void);
     }
 }
 
-// Take square root of 32bit float.
-pub fn volk_32f_sqrt_32f(out: &mut [f32], inp: &[f32]) {
-    let func = unsafe { raw::volk_32f_sqrt_32f.unwrap() };
-    func(out.as_mut_ptr(), inp.as_ptr(), inp.len() as libc::c_uint)
+// TODO: also add a try version.
+macro_rules! make_funcs {
+    (
+        fn $name:ident($( $arg:ident : $ty:ty ),* $(,)?) $(-> $ret:ty)? $block:block
+        checks $checks:block
+        
+) => {
+        paste! {
+            pub fn $name($( $arg : $ty ),*) $(-> $ret)? {
+                $checks;
+                $block
+            }
+            pub unsafe fn [<$name  _unchecked>]($( $arg : $ty ),*) $(-> $ret)? {
+                $block
+            }
+        }
+    }
 }
 
-// Multiply two vectors.
-pub fn volk_32fc_x2_multiply_32fc(
-    out: &mut [Complex<f32>],
-    in0: &[Complex<f32>],
-    in1: &[Complex<f32>],
-) {
-    assert_eq!(in0.len(), in1.len());
-    assert_eq!(out.len(), in0.len());
-    let func = unsafe { raw::volk_32fc_x2_multiply_32fc.unwrap() };
-    func(
-        out.as_mut_ptr(),
-        in0.as_ptr(),
-        in1.as_ptr(),
-        in0.len() as libc::c_uint,
-    )
+make_funcs! {
+    fn volk_32f_sqrt_32f(out: &mut [f32], inp: &[f32]) {
+        unsafe { ffi::volk_32f_sqrt_32f(out.as_mut_ptr(), inp.as_ptr(), inp.len() as libc::c_uint) }
+    }
+    checks {
+        assert_eq!(out.len(), inp.len());
+    }
 }
 
-// Multiply two vectors in place.
-pub fn volk_32fc_x2_multiply_32fc_inplace(out: &mut [Complex<f32>], in0: &[Complex<f32>]) {
-    assert_eq!(out.len(), in0.len());
-    let func = unsafe { raw::volk_32fc_x2_multiply_32fc.unwrap() };
-    func(
-        out.as_mut_ptr(),
-        in0.as_ptr(),
-        out.as_ptr(),
-        in0.len() as libc::c_uint,
-    )
+make_funcs! {
+    // Multiply two vectors.
+    fn volk_32fc_x2_multiply_32fc(
+        out: &mut [Complex<f32>],
+        in0: &[Complex<f32>],
+        in1: &[Complex<f32>],
+    ) {
+        let func = unsafe { ffi::volk_32fc_x2_multiply_32fc };
+        func(
+            out.as_mut_ptr(),
+            in0.as_ptr(),
+            in1.as_ptr(),
+            in0.len() as libc::c_uint,
+        )
+    }
+    checks {
+        assert_eq!(in0.len(), in1.len());
+        assert_eq!(out.len(), in0.len());
+    }
+}
+
+make_funcs! {
+    // Multiply two vectors in place.
+    fn volk_32fc_x2_multiply_32fc_inplace(out: &mut [Complex<f32>], in0: &[Complex<f32>]) {
+        let func = unsafe { ffi::volk_32fc_x2_multiply_32fc };
+        func(
+            out.as_mut_ptr(),
+            in0.as_ptr(),
+            out.as_ptr(),
+            in0.len() as libc::c_uint,
+        )
+    }
+    checks {
+        assert_eq!(out.len(), in0.len());
+    }
 }
 
 #[cfg(test)]

@@ -29,7 +29,7 @@ macro_rules! make_funcs {
     (
         fn $name:ident($( $arg:ident : $ty:ty ),* $(,)?) $(-> $ret:ty)? $block:block
         checks $checks:block
-        
+
 ) => {
         paste! {
             pub fn $name($( $arg : $ty ),*) $(-> $ret)? {

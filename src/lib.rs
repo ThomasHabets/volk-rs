@@ -2,7 +2,7 @@
 //!
 //! Rust bindings for the volk library.
 //!
-//! https://github.com/ThomasHabets/volk-rs
+//! <https://github.com/ThomasHabets/volk-rs>
 //!
 //! [VOLK][volk] is the Vector-Optimized Library of Kernels. It is a library
 //! that contains kernels of hand-written SIMD code for different mathematical
@@ -67,22 +67,33 @@ macro_rules! make_funcs {
             $(#[$meta])*
             #[doc = concat!("\n\nThis version panics on bounds check failure.")]
             #[inline]
+            #[allow(clippy::cast_possible_truncation)]
             pub fn $name($( $arg : $ty ),*) -> $ret {
                 $(assert_eq!($a, $b);)*
+                $(assert!(libc::c_uint::try_from($a).is_ok());)*
+                $(assert!(libc::c_uint::try_from($b).is_ok());)*
                 $block
             }
             $(#[$meta])*
-            #[doc = concat!("\n\nThis version returns Err on bounds check failure.")]
+            #[doc = concat!("\n\nThis version returns Err on bounds check failure.\n# Errors\nSlice lengths don't match, or don't fit in `libc::c_uint`.")]
             #[inline]
+            #[allow(clippy::cast_possible_truncation)]
             pub fn [<try_ $name>]($( $arg : $ty ),*) -> Result<$ret, VolkError> {
                 $(if $a != $b {
+                    return Err(VolkError::InvalidArgument);
+                })*
+                $(if libc::c_uint::try_from($a).is_err() {
+                    return Err(VolkError::InvalidArgument);
+                })*
+                $(if libc::c_uint::try_from($b).is_err() {
                     return Err(VolkError::InvalidArgument);
                 })*
                 Ok($block)
             }
             $(#[$meta])*
-            #[doc = concat!("\n\nThis unsafe version does NO bounds checks.")]
+            #[doc = concat!("\n\nThis unsafe version does NO bounds checks.\n\n# Safety\nCaller must ensure slice lengths are equal and fit in `libc::c_uint`.")]
             #[inline]
+            #[allow(clippy::cast_possible_truncation)]
             pub unsafe fn [<$name  _unchecked>]($( $arg : $ty ),*) -> $ret {
                 $(debug_assert_eq!($a, $b);)*
                 $block
@@ -125,7 +136,7 @@ make_funcs! {
             in0.as_ptr(),
             in1.as_ptr(),
             in0.len() as libc::c_uint,
-        )
+        );
     }
     checks {
         (in0.len(), in1.len()),
@@ -142,7 +153,7 @@ make_funcs! {
             in0.as_ptr(),
             out.as_ptr(),
             in0.len() as libc::c_uint,
-        )
+        );
     }
     checks {
         (out.len(), in0.len())
@@ -187,7 +198,10 @@ mod tests {
     fn test_volk_32f_sqrt_32f() {
         for (input, want) in &[
             (vec![4.0f32], vec![2.0f32]),
-            (vec![0.0f32, 1.0, 2.0, 4.0], vec![0.0, 1.0, 1.414213, 2.0]),
+            (
+                vec![0.0f32, 1.0, 2.0, 4.0],
+                vec![0.0, 1.0, std::f32::consts::SQRT_2, 2.0],
+            ),
         ] {
             assert_eq!(input.len(), want.len());
             let mut got = vec![0.0f32; want.len()];
@@ -201,7 +215,10 @@ mod tests {
         for right in [true, false] {
             for (input, want) in &[
                 (vec![4.0f32], vec![2.0f32]),
-                (vec![0.0f32, 1.0, 2.0, 4.0], vec![0.0, 1.0, 1.414213, 2.0]),
+                (
+                    vec![0.0f32, 1.0, 2.0, 4.0],
+                    vec![0.0, 1.0, std::f32::consts::SQRT_2, 2.0],
+                ),
             ] {
                 assert_eq!(input.len(), want.len());
                 let len = if right { want.len() } else { 123 };

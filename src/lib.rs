@@ -29,20 +29,21 @@ macro_rules! make_funcs {
     (
         $(#[$meta:meta])*
         fn $name:ident($( $arg:ident : $ty:ty ),* $(,)?) $(-> $ret:ty)? $block:block
-        checks $checks:block
+        checks { $(($a:expr, $b:expr)),* }
 
 ) => {
         paste! {
             $(#[$meta])*
             #[inline]
             pub fn $name($( $arg : $ty ),*) $(-> $ret)? {
-                $checks;
+                $(assert_eq!($a, $b);)*
                 $block
             }
             $(#[$meta])*
             #[doc = concat!("\n\nThis unsafe version does no bounds checks.")]
             #[inline]
             pub unsafe fn [<$name  _unchecked>]($( $arg : $ty ),*) $(-> $ret)? {
+                $(debug_assert_eq!($a, $b);)*
                 $block
             }
         }
@@ -55,7 +56,7 @@ make_funcs! {
         unsafe { ffi::volk_32f_sqrt_32f(out.as_mut_ptr(), inp.as_ptr(), inp.len() as libc::c_uint) }
     }
     checks {
-        assert_eq!(out.len(), inp.len());
+        (out.len(), inp.len())
     }
 }
 
@@ -75,8 +76,8 @@ make_funcs! {
         )
     }
     checks {
-        assert_eq!(in0.len(), in1.len());
-        assert_eq!(out.len(), in0.len());
+        (in0.len(), in1.len()),
+        (out.len(), in0.len())
     }
 }
 
@@ -92,7 +93,7 @@ make_funcs! {
         )
     }
     checks {
-        assert_eq!(out.len(), in0.len());
+        (out.len(), in0.len())
     }
 }
 

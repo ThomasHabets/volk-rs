@@ -1,15 +1,15 @@
 //! # volk-rs
-//! 
+//!
 //! Rust bindings for the volk library.
-//! 
+//!
 //! https://github.com/ThomasHabets/volk-rs
-//! 
+//!
 //! [VOLK][volk] is the Vector-Optimized Library of Kernels. It is a library
 //! that contains kernels of hand-written SIMD code for different mathematical
 //! operations. Since each SIMD architecture can be very different and no
 //! compiler has yet come along to handle vectorization properly or highly
 //! efficiently, VOLK approaches the problem differently.
-//! 
+//!
 //! [volk]: https://github.com/gnuradio/volk
 use num_complex::Complex;
 use paste::paste;
@@ -21,16 +21,19 @@ pub(crate) mod ffi {
     #[link(name = "volk")]
     unsafe extern "C" {
         /// Take square root of 32bit floats.
-        pub static mut volk_32f_sqrt_32f:
+        pub static volk_32f_sqrt_32f:
             extern "C" fn(out: *mut c_float, inp: *const c_float, len: c_uint);
 
         /// Multiply two vectors of complex numbers, pairwise.
-        pub static mut volk_32fc_x2_multiply_32fc: extern "C" fn(
+        pub static volk_32fc_x2_multiply_32fc: extern "C" fn(
             out: *mut Complex<f32>,
             in0: *const Complex<f32>,
             in1: *const Complex<f32>,
             len: c_uint,
         );
+        pub unsafe static volk_32fc_s32f_atan2_32f:
+            extern "C" fn(out: *mut f32, in0: *const Complex<f32>, scale: f32, len: c_uint);
+
         // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
         // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
         // fn volk_free(ptr: *mut core::ffi::c_void);
@@ -92,6 +95,17 @@ make_funcs! {
     /// Take square root of a vector of floats.
     fn volk_32f_sqrt_32f(out: &mut [f32], inp: &[f32]) {
         unsafe { ffi::volk_32f_sqrt_32f(out.as_mut_ptr(), inp.as_ptr(), inp.len() as libc::c_uint) }
+    }
+    checks {
+        (out.len(), inp.len())
+    }
+}
+
+make_funcs! {
+    /// Computes the arctan for each value in a complex vector and applies a
+    /// normalization factor.
+    fn volk_32fc_s32f_atan2_32f(out: &mut [f32], inp: &[Complex<f32>], scale: f32) {
+        unsafe { ffi::volk_32fc_s32f_atan2_32f(out.as_mut_ptr(), inp.as_ptr(), scale, inp.len() as libc::c_uint) }
     }
     checks {
         (out.len(), inp.len())

@@ -25,4 +25,4 @@ jobs:
     - name: Install stuff
       run: sudo apt-get install libvolk-dev
     - name: Run tests
-      run: NODIFF=true CLEANUP=true tickbox --dir tickbox/pre-commit --disable-tui --max-concurrency=1
+      run: NODIFF=true CLEANUP=true tickbox --dir tickbox/precommit --disable-tui --max-concurrency=1

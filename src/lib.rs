@@ -69,9 +69,9 @@ macro_rules! make_funcs {
             #[inline]
             #[allow(clippy::cast_possible_truncation)]
             pub fn $name($( $arg : $ty ),*) -> $ret {
-                $(assert_eq!($a, $b);)*
-                $(assert!(libc::c_uint::try_from($a).is_ok());)*
-                $(assert!(libc::c_uint::try_from($b).is_ok());)*
+                $(assert_eq!($a, $b, "Slice lengths do not match");)*
+                $(assert!(libc::c_uint::try_from($a).is_ok(), "Slice length does not fit in c_uint");)*
+                $(assert!(libc::c_uint::try_from($b).is_ok(), "Slice length does not fit in c_uint");)*
                 $block
             }
             $(#[$meta])*

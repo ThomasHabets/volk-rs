@@ -34,6 +34,13 @@ pub(crate) mod ffi {
         pub unsafe static volk_32fc_s32f_atan2_32f:
             extern "C" fn(out: *mut f32, in0: *const Complex<f32>, scale: f32, len: c_uint);
 
+        pub unsafe static volk_32fc_x2_multiply_conjugate_32fc: extern "C" fn(
+            out: *mut Complex<f32>,
+            in0: *const Complex<f32>,
+            in1: *const Complex<f32>,
+            len: c_uint,
+        );
+
         // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
         // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
         // fn volk_free(ptr: *mut core::ffi::c_void);
@@ -131,6 +138,28 @@ make_funcs! {
         in1: &[Complex<f32>],
     ) {
         let func = unsafe { ffi::volk_32fc_x2_multiply_32fc };
+        func(
+            out.as_mut_ptr(),
+            in0.as_ptr(),
+            in1.as_ptr(),
+            in0.len() as libc::c_uint,
+        );
+    }
+    checks {
+        (in0.len(), in1.len()),
+        (out.len(), in0.len())
+    }
+}
+
+make_funcs! {
+    /// Multiplies a complex vector by the conjugate of a second complex vector
+    /// and returns the complex result.
+    fn volk_32fc_x2_multiply_conjugate_32fc(
+        out: &mut [Complex<f32>],
+        in0: &[Complex<f32>],
+        in1: &[Complex<f32>],
+    ) {
+        let func = unsafe { ffi::volk_32fc_x2_multiply_conjugate_32fc };
         func(
             out.as_mut_ptr(),
             in0.as_ptr(),

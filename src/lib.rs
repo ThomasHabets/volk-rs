@@ -24,25 +24,50 @@ pub(crate) mod ffi {
     }
 }
 
-// TODO: also add a try version.
+#[derive(Debug)]
+pub enum VolkError {
+    InvalidArgument,
+}
+
 macro_rules! make_funcs {
     (
         $(#[$meta:meta])*
-        fn $name:ident($( $arg:ident : $ty:ty ),* $(,)?) $(-> $ret:ty)? $block:block
+        fn $name:ident($( $arg:ident : $ty:ty ),* $(,)?) $block:block
+        checks { $(($a:expr, $b:expr)),* }
+    ) => {
+        make_funcs! {
+            $(#[$meta])*
+            fn $name($( $arg: $ty ),*) -> () $block
+            checks { $(($a, $b)),* }
+        }
+    };
+    (
+        $(#[$meta:meta])*
+        fn $name:ident($( $arg:ident : $ty:ty ),* $(,)?) -> $ret:ty $block:block
         checks { $(($a:expr, $b:expr)),* }
 
 ) => {
         paste! {
             $(#[$meta])*
+            #[doc = concat!("\n\nThis version panics on bounds check failure.")]
             #[inline]
-            pub fn $name($( $arg : $ty ),*) $(-> $ret)? {
+            pub fn $name($( $arg : $ty ),*) -> $ret {
                 $(assert_eq!($a, $b);)*
                 $block
             }
             $(#[$meta])*
-            #[doc = concat!("\n\nThis unsafe version does no bounds checks.")]
+            #[doc = concat!("\n\nThis version returns Err on bounds check failure.")]
             #[inline]
-            pub unsafe fn [<$name  _unchecked>]($( $arg : $ty ),*) $(-> $ret)? {
+            pub fn [<try_ $name>]($( $arg : $ty ),*) -> Result<$ret, VolkError> {
+                $(if $a != $b {
+                    return Err(VolkError::InvalidArgument);
+                })*
+                Ok($block)
+            }
+            $(#[$meta])*
+            #[doc = concat!("\n\nThis unsafe version does NO bounds checks.")]
+            #[inline]
+            pub unsafe fn [<$name  _unchecked>]($( $arg : $ty ),*) -> $ret {
                 $(debug_assert_eq!($a, $b);)*
                 $block
             }
@@ -141,6 +166,25 @@ mod tests {
             let mut got = vec![0.0f32; want.len()];
             volk_32f_sqrt_32f(&mut got, input);
             assert_close(&got, want);
+        }
+    }
+
+    #[test]
+    fn test_volk_32f_sqrt_32f_try() {
+        for right in [true, false] {
+            for (input, want) in &[
+                (vec![4.0f32], vec![2.0f32]),
+                (vec![0.0f32, 1.0, 2.0, 4.0], vec![0.0, 1.0, 1.414213, 2.0]),
+            ] {
+                assert_eq!(input.len(), want.len());
+                let len = if right { want.len() } else { 123 };
+                let mut got = vec![0.0f32; len];
+                let rc = try_volk_32f_sqrt_32f(&mut got, input);
+                assert_eq!(right, rc.is_ok());
+                if rc.is_ok() {
+                    assert_close(&got, want);
+                }
+            }
         }
     }
 

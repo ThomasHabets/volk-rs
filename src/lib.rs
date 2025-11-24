@@ -33,6 +33,8 @@ pub(crate) mod ffi {
         );
         pub unsafe static volk_32fc_s32f_atan2_32f:
             extern "C" fn(out: *mut f32, in0: *const Complex<f32>, scale: f32, len: c_uint);
+        pub unsafe static volk_32f_atan_32f:
+            extern "C" fn(out: *mut f32, in0: *const f32, len: c_uint);
 
         pub unsafe static volk_32fc_x2_multiply_conjugate_32fc: extern "C" fn(
             out: *mut Complex<f32>,
@@ -124,6 +126,17 @@ make_funcs! {
     /// normalization factor.
     fn volk_32fc_s32f_atan2_32f(out: &mut [f32], inp: &[Complex<f32>], scale: f32) {
         unsafe { ffi::volk_32fc_s32f_atan2_32f(out.as_mut_ptr(), inp.as_ptr(), scale, inp.len() as libc::c_uint) }
+    }
+    checks {
+        (out.len(), inp.len())
+    }
+}
+
+make_funcs! {
+    /// Computes the arctan for each value in a complex vector and applies a
+    /// normalization factor.
+    fn volk_32f_atan_32f(out: &mut [f32], inp: &[f32]) {
+        unsafe { ffi::volk_32f_atan_32f(out.as_mut_ptr(), inp.as_ptr(), inp.len() as libc::c_uint) }
     }
     checks {
         (out.len(), inp.len())

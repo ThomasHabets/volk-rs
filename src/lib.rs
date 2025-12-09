@@ -188,6 +188,9 @@ make_funcs! {
 
 make_funcs! {
     /// Multiply two complex vectors in place.
+    ///
+    /// Note that this is NOT formally defined to be safe, in volk. But GNU
+    /// Radio makes this assumption, so "it should be fine".
     fn volk_32fc_x2_multiply_32fc_inplace(out: &mut [Complex<f32>], in0: &[Complex<f32>]) {
         let func = unsafe { ffi::volk_32fc_x2_multiply_32fc };
         func(
@@ -250,6 +253,30 @@ mod tests {
             volk_32f_sqrt_32f(&mut got, input);
             assert_close(&got, want);
         }
+    }
+
+    #[test]
+    #[should_panic(expected = "Slice lengths do not match")]
+    fn length_mismatch_panic_1() {
+        let input = vec![0.0f32; 10];
+        let mut out = vec![0.0f32; 11];
+        volk_32f_sqrt_32f(&mut out, &input);
+    }
+
+    #[test]
+    #[should_panic(expected = "Slice lengths do not match")]
+    fn length_mismatch_panic_2() {
+        let input = vec![0.0f32; 11];
+        let mut out = vec![0.0f32; 10];
+        volk_32f_sqrt_32f(&mut out, &input);
+    }
+
+    #[test]
+    fn length_mismatch_error() {
+        let mut a = vec![0.0f32; 10];
+        let mut b = vec![0.0f32; 11];
+        assert!(try_volk_32f_sqrt_32f(&mut a, &b).is_err());
+        assert!(try_volk_32f_sqrt_32f(&mut b, &a).is_err());
     }
 
     #[test]

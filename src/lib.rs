@@ -43,7 +43,10 @@ pub(crate) mod ffi {
             len: c_uint,
         );
 
-        // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
+        /// Get the machine alignment in bytes.
+        #[must_use]
+        pub fn volk_get_alignment() -> libc::size_t;
+
         // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
         // fn volk_free(ptr: *mut core::ffi::c_void);
     }
@@ -52,6 +55,19 @@ pub(crate) mod ffi {
 #[derive(Debug)]
 pub enum VolkError {
     InvalidArgument,
+}
+
+/// Get the machine alignment in bytes.
+///
+/// # Panics
+///
+/// Can't happen.
+#[must_use]
+#[allow(clippy::useless_conversion)]
+pub fn volk_get_alignment() -> usize {
+    (unsafe { ffi::volk_get_alignment() })
+        .try_into()
+        .expect("size_t failed to convert to usize")
 }
 
 macro_rules! make_funcs {
@@ -336,5 +352,12 @@ mod tests {
             volk_32fc_x2_multiply_32fc(&mut got, in0, in1);
             assert_close(&got, want);
         }
+    }
+
+    #[test]
+    fn alignment() {
+        let align = volk_get_alignment();
+        let want = 0;
+        assert!(align > want, "alignment {align} needs to be > {want}");
     }
 }

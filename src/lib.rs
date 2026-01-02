@@ -51,14 +51,21 @@ pub(crate) mod ffi {
         #[must_use]
         pub fn volk_get_machine() -> *const libc::c_char;
 
-        // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
-        // fn volk_free(ptr: *mut core::ffi::c_void);
+        #[must_use]
+        pub fn volk_malloc(size: libc::size_t, alignment: libc::size_t) -> *mut core::ffi::c_void;
+
+        pub fn volk_free(ptr: *mut core::ffi::c_void);
+
+        /// Is the pointer on a machine alignment boundary?
+        #[must_use]
+        pub fn volk_is_aligned(ptr: *mut core::ffi::c_void) -> bool;
     }
 }
 
 #[derive(Debug)]
 pub enum VolkError {
     InvalidArgument,
+    AllocationFailed,
 }
 
 /// Get the machine alignment in bytes.
@@ -80,6 +87,92 @@ pub fn volk_get_machine() -> String {
     let ptr = unsafe { ffi::volk_get_machine() };
     let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
     cstr.to_string_lossy().into_owned()
+}
+
+/// Allocation allocated using `volk_malloc()`.
+pub struct Allocation<T> {
+    ptr: *mut T,
+    len: usize,
+}
+
+impl<T> Allocation<T> {
+    /// Allocate using `volk_malloc()`.
+    ///
+    /// Takes number of elements, not bytes.
+    ///
+    /// ## Errors
+    ///
+    /// On allocation failure.
+    pub fn new(elements: usize, alignment: usize) -> Result<Self, VolkError> {
+        volk_malloc(elements, alignment)
+    }
+    /// Get a ptr to the buffer.
+    #[must_use]
+    pub fn ptr(&self) -> *const T {
+        self.ptr.cast_const()
+    }
+    /// Get slice.
+    #[must_use]
+    pub fn slice(&self) -> &[T] {
+        unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
+    }
+    /// Get mut slice.
+    #[must_use]
+    pub fn slice_mut(&mut self) -> &mut [T] {
+        unsafe { std::slice::from_raw_parts_mut(self.ptr, self.len) }
+    }
+}
+
+impl<T> Drop for Allocation<T> {
+    fn drop(&mut self) {
+        unsafe { ffi::volk_free(self.ptr.cast()) };
+    }
+}
+
+/// Allocate size bytes of data aligned to alignment.
+///
+/// We use C11 and want to rely on C11 library features, namely we use
+/// `aligned_alloc` to allocate aligned memory. see:
+/// <https://en.cppreference.com/w/c/memory/aligned_alloc>
+///
+/// Not all platforms support this feature. For Apple Clang, we fall back to
+/// `posix_memalign`. see: <https://linux.die.net/man/3/aligned_alloc> For MSVC,
+/// we fall back to `_aligned_malloc`. see:
+/// <https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/aligned-malloc?view=vs-2019>
+///
+/// ## Parameters
+///
+/// * `len` The number of elements, not bytes, to allocate.
+/// * `alignment` The byte alignment of the allocated memory.
+///
+/// ## Returns
+///
+/// pointer to aligned memory.
+///
+/// ## Errors
+///
+/// Allocation failures.
+pub fn volk_malloc<T>(len: usize, alignment: usize) -> Result<Allocation<T>, VolkError> {
+    // Because the allocation is done outside Rust, and the memory is not
+    // initialized, this could be UB.
+    let bytes = std::mem::size_of::<T>()
+        .checked_mul(len)
+        .ok_or(VolkError::InvalidArgument)?;
+    let ptr = unsafe { ffi::volk_malloc(bytes, alignment) };
+    if ptr.is_null() {
+        Err(VolkError::AllocationFailed)
+    } else {
+        Ok(Allocation {
+            ptr: ptr.cast(),
+            len,
+        })
+    }
+}
+
+/// Is the pointer on a machine alignment boundary?
+#[must_use]
+pub fn volk_is_aligned<T>(ptr: *const T) -> bool {
+    unsafe { ffi::volk_is_aligned(ptr as *mut libc::c_void) }
 }
 
 macro_rules! make_funcs {
@@ -377,5 +470,13 @@ mod tests {
     fn machine() {
         let mach = volk_get_machine();
         assert_ne!(mach, "");
+    }
+
+    #[test]
+    fn alloc() {
+        let mut alloc = volk_malloc::<u8>(12, volk_get_alignment()).unwrap();
+        assert!(volk_is_aligned(alloc.ptr()));
+        assert_eq!(alloc.slice().len(), 12);
+        assert_eq!(alloc.slice_mut().len(), 12);
     }
 }

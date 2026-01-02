@@ -47,6 +47,10 @@ pub(crate) mod ffi {
         #[must_use]
         pub fn volk_get_alignment() -> libc::size_t;
 
+        /// Returns the name of the machine this instance will use.
+        #[must_use]
+        pub fn volk_get_machine() -> *const libc::c_char;
+
         // fn volk_malloc(size: usize, alignment: usize) -> *mut core::ffi::c_void;
         // fn volk_free(ptr: *mut core::ffi::c_void);
     }
@@ -68,6 +72,14 @@ pub fn volk_get_alignment() -> usize {
     (unsafe { ffi::volk_get_alignment() })
         .try_into()
         .expect("size_t failed to convert to usize")
+}
+
+/// Returns the name of the machine this instance will use.
+#[must_use]
+pub fn volk_get_machine() -> String {
+    let ptr = unsafe { ffi::volk_get_machine() };
+    let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
+    cstr.to_string_lossy().into_owned()
 }
 
 macro_rules! make_funcs {
@@ -359,5 +371,11 @@ mod tests {
         let align = volk_get_alignment();
         let want = 0;
         assert!(align > want, "alignment {align} needs to be > {want}");
+    }
+
+    #[test]
+    fn machine() {
+        let mach = volk_get_machine();
+        assert_ne!(mach, "");
     }
 }

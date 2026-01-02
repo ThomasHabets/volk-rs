@@ -170,9 +170,23 @@ pub fn volk_malloc<T>(len: usize, alignment: usize) -> Result<Allocation<T>, Vol
 }
 
 /// Is the pointer on a machine alignment boundary?
+///
+/// ## Safety
+///
+/// For performance reasons, this function is not usable until another
+/// volk API call is made which will perform certain initialization tasks.
 #[must_use]
-pub fn volk_is_aligned<T>(ptr: *const T) -> bool {
+pub unsafe fn volk_is_aligned_unsafe<T>(ptr: *const T) -> bool {
     unsafe { ffi::volk_is_aligned(ptr as *mut libc::c_void) }
+}
+
+/// Is the pointer on a machine alignment boundary?
+#[must_use]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub fn volk_is_aligned<T>(ptr: *const T) -> bool {
+    // Call another volk function for init reasons.
+    let _ = volk_get_alignment();
+    unsafe { volk_is_aligned_unsafe(ptr) }
 }
 
 macro_rules! make_funcs {

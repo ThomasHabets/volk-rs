@@ -52,6 +52,21 @@ pub(crate) mod ffi {
         pub fn volk_get_machine() -> *const libc::c_char;
 
         #[must_use]
+        pub fn volk_version() -> *const libc::c_char;
+
+        #[must_use]
+        pub fn volk_c_compiler() -> *const libc::c_char;
+
+        #[must_use]
+        pub fn volk_compiler_flags() -> *const libc::c_char;
+
+        #[must_use]
+        pub fn volk_available_machines() -> *const libc::c_char;
+
+        #[must_use]
+        pub fn volk_prefix() -> *const libc::c_char;
+
+        #[must_use]
         pub fn volk_malloc(size: libc::size_t, alignment: libc::size_t) -> *mut core::ffi::c_void;
 
         pub fn volk_free(ptr: *mut core::ffi::c_void);
@@ -85,6 +100,42 @@ pub fn volk_get_alignment() -> usize {
 #[must_use]
 pub fn volk_get_machine() -> String {
     let ptr = unsafe { ffi::volk_get_machine() };
+    let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
+    cstr.to_string_lossy().into_owned()
+}
+
+/// Returns the name of the machine this instance will use.
+#[must_use]
+pub fn volk_available_machines() -> String {
+    let ptr = unsafe { ffi::volk_available_machines() };
+    let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
+    cstr.to_string_lossy().into_owned()
+}
+
+#[must_use]
+pub fn volk_version() -> String {
+    let ptr = unsafe { ffi::volk_version() };
+    let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
+    cstr.to_string_lossy().into_owned()
+}
+
+#[must_use]
+pub fn volk_c_compiler() -> String {
+    let ptr = unsafe { ffi::volk_c_compiler() };
+    let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
+    cstr.to_string_lossy().into_owned()
+}
+
+#[must_use]
+pub fn volk_compiler_flags() -> String {
+    let ptr = unsafe { ffi::volk_compiler_flags() };
+    let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
+    cstr.to_string_lossy().into_owned()
+}
+
+#[must_use]
+pub fn volk_prefix() -> String {
+    let ptr = unsafe { ffi::volk_prefix() };
     let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
     cstr.to_string_lossy().into_owned()
 }
@@ -484,6 +535,36 @@ mod tests {
     fn machine() {
         let mach = volk_get_machine();
         assert_ne!(mach, "");
+    }
+
+    #[test]
+    fn machines() {
+        let mach = volk_available_machines();
+        assert_ne!(mach, "");
+    }
+
+    #[test]
+    fn version() {
+        let version = volk_version();
+        assert_ne!(version, "");
+    }
+
+    #[test]
+    fn compiler() {
+        let mach = volk_c_compiler();
+        assert_ne!(mach, "");
+    }
+
+    #[test]
+    fn compiler_flags() {
+        let s = volk_compiler_flags();
+        assert_ne!(s, "");
+    }
+
+    #[test]
+    fn prefix() {
+        let s = volk_prefix();
+        assert_ne!(s, "");
     }
 
     #[test]

@@ -97,6 +97,8 @@ pub fn volk_get_alignment() -> usize {
 }
 
 /// Returns the name of the machine this instance will use.
+// Quite possibly this could just return &str, but it just feels better to
+// minimize the assumed lifetime of C strings.
 #[must_use]
 pub fn volk_get_machine() -> String {
     let ptr = unsafe { ffi::volk_get_machine() };
@@ -104,7 +106,11 @@ pub fn volk_get_machine() -> String {
     cstr.to_string_lossy().into_owned()
 }
 
-/// Returns the name of the machine this instance will use.
+/// Returns the list of machine names that this volk library supports.
+///
+/// The list is semicolon separated.
+// Quite possibly this could just return &str, but it just feels better to
+// minimize the assumed lifetime of C strings.
 #[must_use]
 pub fn volk_available_machines() -> String {
     let ptr = unsafe { ffi::volk_available_machines() };
@@ -112,6 +118,11 @@ pub fn volk_available_machines() -> String {
     cstr.to_string_lossy().into_owned()
 }
 
+/// Returns the volk version string.
+///
+/// E.g. `"2.5.2"`.
+// Quite possibly this could just return &str, but it just feels better to
+// minimize the assumed lifetime of C strings.
 #[must_use]
 pub fn volk_version() -> String {
     let ptr = unsafe { ffi::volk_version() };
@@ -119,6 +130,9 @@ pub fn volk_version() -> String {
     cstr.to_string_lossy().into_owned()
 }
 
+/// Returns the C compiler used to build volk.
+// Quite possibly this could just return &str, but it just feels better to
+// minimize the assumed lifetime of C strings.
 #[must_use]
 pub fn volk_c_compiler() -> String {
     let ptr = unsafe { ffi::volk_c_compiler() };
@@ -126,6 +140,9 @@ pub fn volk_c_compiler() -> String {
     cstr.to_string_lossy().into_owned()
 }
 
+/// Returns the C compiler flags used to build volk.
+// Quite possibly this could just return &str, but it just feels better to
+// minimize the assumed lifetime of C strings.
 #[must_use]
 pub fn volk_compiler_flags() -> String {
     let ptr = unsafe { ffi::volk_compiler_flags() };
@@ -133,6 +150,11 @@ pub fn volk_compiler_flags() -> String {
     cstr.to_string_lossy().into_owned()
 }
 
+/// Returns the prefix of the path where volk is installed.
+///
+/// E.g. `/usr`.
+// Quite possibly this could just return &str, but it just feels better to
+// minimize the assumed lifetime of C strings.
 #[must_use]
 pub fn volk_prefix() -> String {
     let ptr = unsafe { ffi::volk_prefix() };
@@ -539,8 +561,8 @@ mod tests {
 
     #[test]
     fn machines() {
-        let mach = volk_available_machines();
-        assert_ne!(mach, "");
+        let s = volk_available_machines();
+        assert_ne!(s, "");
     }
 
     #[test]
@@ -551,8 +573,8 @@ mod tests {
 
     #[test]
     fn compiler() {
-        let mach = volk_c_compiler();
-        assert_ne!(mach, "");
+        let s = volk_c_compiler();
+        assert_ne!(s, "");
     }
 
     #[test]

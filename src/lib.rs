@@ -78,6 +78,7 @@ pub(crate) mod ffi {
 }
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum VolkError {
     InvalidArgument,
     AllocationFailed,

@@ -90,6 +90,7 @@ pub enum VolkError {
 /// Can't happen.
 #[must_use]
 #[allow(clippy::useless_conversion)]
+#[inline]
 pub fn volk_get_alignment() -> usize {
     (unsafe { ffi::volk_get_alignment() })
         .try_into()
@@ -100,6 +101,7 @@ pub fn volk_get_alignment() -> usize {
 // Quite possibly this could just return &str, but it just feels better to
 // minimize the assumed lifetime of C strings.
 #[must_use]
+#[inline]
 pub fn volk_get_machine() -> String {
     let ptr = unsafe { ffi::volk_get_machine() };
     let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
@@ -112,6 +114,7 @@ pub fn volk_get_machine() -> String {
 // Quite possibly this could just return &str, but it just feels better to
 // minimize the assumed lifetime of C strings.
 #[must_use]
+#[inline]
 pub fn volk_available_machines() -> String {
     let ptr = unsafe { ffi::volk_available_machines() };
     let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
@@ -124,6 +127,7 @@ pub fn volk_available_machines() -> String {
 // Quite possibly this could just return &str, but it just feels better to
 // minimize the assumed lifetime of C strings.
 #[must_use]
+#[inline]
 pub fn volk_version() -> String {
     let ptr = unsafe { ffi::volk_version() };
     let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
@@ -134,6 +138,7 @@ pub fn volk_version() -> String {
 // Quite possibly this could just return &str, but it just feels better to
 // minimize the assumed lifetime of C strings.
 #[must_use]
+#[inline]
 pub fn volk_c_compiler() -> String {
     let ptr = unsafe { ffi::volk_c_compiler() };
     let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
@@ -144,6 +149,7 @@ pub fn volk_c_compiler() -> String {
 // Quite possibly this could just return &str, but it just feels better to
 // minimize the assumed lifetime of C strings.
 #[must_use]
+#[inline]
 pub fn volk_compiler_flags() -> String {
     let ptr = unsafe { ffi::volk_compiler_flags() };
     let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
@@ -156,6 +162,7 @@ pub fn volk_compiler_flags() -> String {
 // Quite possibly this could just return &str, but it just feels better to
 // minimize the assumed lifetime of C strings.
 #[must_use]
+#[inline]
 pub fn volk_prefix() -> String {
     let ptr = unsafe { ffi::volk_prefix() };
     let cstr = unsafe { std::ffi::CStr::from_ptr(ptr) };
@@ -176,6 +183,7 @@ impl<T> Allocation<T> {
     /// ## Errors
     ///
     /// On allocation failure.
+    #[inline]
     pub fn new(elements: usize, alignment: usize) -> Result<Self, VolkError> {
         volk_malloc(elements, alignment)
     }
@@ -249,6 +257,8 @@ pub fn volk_malloc<T>(len: usize, alignment: usize) -> Result<Allocation<T>, Vol
 /// For performance reasons, this function is not usable until another
 /// volk API call is made which will perform certain initialization tasks.
 #[must_use]
+#[allow(clippy::inline_always)]
+#[inline(always)]
 pub unsafe fn volk_is_aligned_unsafe<T>(ptr: *const T) -> bool {
     unsafe { ffi::volk_is_aligned(ptr as *mut libc::c_void) }
 }
@@ -256,6 +266,7 @@ pub unsafe fn volk_is_aligned_unsafe<T>(ptr: *const T) -> bool {
 /// Is the pointer on a machine alignment boundary?
 #[must_use]
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[inline]
 pub fn volk_is_aligned<T>(ptr: *const T) -> bool {
     // Call another volk function for init reasons.
     let _ = volk_get_alignment();

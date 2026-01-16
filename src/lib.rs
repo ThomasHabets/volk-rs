@@ -250,6 +250,7 @@ pub fn volk_malloc<T>(len: usize, alignment: usize) -> Result<Allocation<T>, Vol
     if ptr.is_null() {
         Err(VolkError::AllocationFailed)
     } else {
+        debug_assert!(volk_is_aligned(ptr));
         Ok(Allocation {
             ptr: ptr.cast(),
             len,

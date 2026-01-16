@@ -18,7 +18,7 @@
 //!
 //! [volk]: https://github.com/gnuradio/volk
 use num_complex::Complex;
-use paste::paste;
+use pastey::paste;
 
 pub(crate) mod ffi {
     use super::Complex;

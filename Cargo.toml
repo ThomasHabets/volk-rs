@@ -10,7 +10,7 @@ description = "Rust bindings for volk"
 [dependencies]
 libc = "0.2"
 num-complex = "0.4.6"
-paste = "1.0.15"
+pastey = "0.2.1"
 
 [build-dependencies]
 pkg-config = "0.3"
